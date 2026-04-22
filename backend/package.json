@@ -4,7 +4,7 @@
   "description": "ZamERP Backend - Mini ERP for Zambian SMEs",
   "scripts": {
     "build": "nest build",
-    "start": "node dist/main",
+    "start": "node dist/src/main.js",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "db:push": "drizzle-kit push:pg",
