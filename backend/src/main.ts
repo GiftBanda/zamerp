@@ -40,6 +40,7 @@ async function bootstrap() {
     .addTag('accounting', 'Basic accounting')
     .addTag('reports', 'Reports & analytics')
     .addTag('audit', 'Audit logs')
+    .addTag('zra', 'ZRA Smart Invoice VSDC integration')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

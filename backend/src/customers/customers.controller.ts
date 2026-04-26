@@ -2,31 +2,12 @@ import {
   Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import {
-  IsString, IsEmail, IsOptional, MaxLength, IsBoolean,
-} from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles, TenantId, CurrentUser } from '../common/decorators/current-user.decorator';
 import { CustomersService } from './customers.service';
 import { AuditService } from '../audit/audit.service';
-
-class CreateCustomerDto {
-  @ApiProperty() @IsString() name: string;
-  @ApiPropertyOptional() @IsOptional() @IsEmail() email?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() address?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() city?: string;
-  @ApiPropertyOptional({ description: 'Taxpayer Identification Number' })
-  @IsOptional() @IsString() tpin?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() contactPerson?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
-}
-
-class UpdateCustomerDto extends CreateCustomerDto {
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() isActive?: boolean;
-}
+import { CreateCustomerDto, UpdateCustomerDto } from './dto';
 
 @ApiTags('customers')
 @ApiBearerAuth()

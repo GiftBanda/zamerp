@@ -7,6 +7,10 @@ const mockTenantsUpdate = vi.fn();
 const mockUsersList = vi.fn();
 const mockUsersCreate = vi.fn();
 const mockUsersUpdate = vi.fn();
+const mockZraSyncCodeTables = vi.fn();
+const mockZraCurrentCodes = vi.fn();
+const mockZraPreviewSale = vi.fn();
+const mockZraTestSale = vi.fn();
 
 vi.mock('@/lib/api', () => ({
   tenantsApi: {
@@ -17,6 +21,12 @@ vi.mock('@/lib/api', () => ({
     list: (...args: any[]) => mockUsersList(...args),
     create: (...args: any[]) => mockUsersCreate(...args),
     update: (...args: any[]) => mockUsersUpdate(...args),
+  },
+  zraApi: {
+    syncCodeTables: (...args: any[]) => mockZraSyncCodeTables(...args),
+    currentCodes: (...args: any[]) => mockZraCurrentCodes(...args),
+    previewSale: (...args: any[]) => mockZraPreviewSale(...args),
+    testSale: (...args: any[]) => mockZraTestSale(...args),
   },
 }));
 
@@ -35,6 +45,10 @@ describe('useSettingsPage', () => {
     vi.clearAllMocks();
     mockTenantsMe.mockResolvedValue(MOCK_TENANT);
     mockUsersList.mockResolvedValue(MOCK_USERS);
+    mockZraCurrentCodes.mockResolvedValue({ success: false, activeCodes: {} });
+    mockZraSyncCodeTables.mockResolvedValue({ success: true });
+    mockZraPreviewSale.mockResolvedValue({ success: true });
+    mockZraTestSale.mockResolvedValue({ success: true });
   });
 
   it('returns expected initial state', async () => {
@@ -44,6 +58,7 @@ describe('useSettingsPage', () => {
     expect(result.current.userModal).toBe(false);
     expect(result.current.tabs).toContain('company');
     expect(result.current.tabs).toContain('users');
+    expect(result.current.tabs).toContain('zra');
     expect(result.current.roles).toContain('admin');
     expect(result.current.roles).toContain('staff');
     expect(result.current.roleColors).toHaveProperty('admin');

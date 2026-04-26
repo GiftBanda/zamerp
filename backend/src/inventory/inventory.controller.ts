@@ -2,35 +2,12 @@ import {
   Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import {
-  IsString, IsOptional, IsNumber, IsBoolean, IsUUID, IsIn, Min,
-} from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles, TenantId, CurrentUser } from '../common/decorators/current-user.decorator';
 import { InventoryService } from './inventory.service';
 import { AuditService } from '../audit/audit.service';
-
-class CreateProductDto {
-  @ApiProperty() @IsString() name: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() sku?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() description?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() unit?: string;
-  @ApiProperty() @IsNumber() costPrice: number;
-  @ApiProperty() @IsNumber() sellingPrice: number;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() vatExempt?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsNumber() reorderLevel?: number;
-  @ApiPropertyOptional() @IsOptional() @IsUUID() categoryId?: string;
-}
-
-class StockAdjustmentDto {
-  @ApiProperty() @IsNumber() @Min(0.001) quantity: number;
-  @ApiProperty({ enum: ['in', 'out', 'adjustment'] })
-  @IsIn(['in', 'out', 'adjustment']) type: 'in' | 'out' | 'adjustment';
-  @ApiPropertyOptional() @IsOptional() @IsString() reference?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
-}
+import { CreateProductDto, StockAdjustmentDto } from './dto';
 
 @ApiTags('inventory')
 @ApiBearerAuth()

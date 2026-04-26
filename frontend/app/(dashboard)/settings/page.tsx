@@ -2,7 +2,7 @@
 
 import { useSettingsPage } from '@/hooks/useSettingsPage';
 import { formatDate, cn } from '@/lib/utils';
-import { Save, Plus, Loader2, X, Users, Building2 } from 'lucide-react';
+import { Save, Plus, Loader2, X, Users, Building2, RefreshCw, Eye, Send } from 'lucide-react';
 
 export default function SettingsPage() {
   const {
@@ -16,9 +16,18 @@ export default function SettingsPage() {
     users,
     tenantForm,
     userForm,
+    zraForm,
     updateTenantMutation,
     createUserMutation,
     updateUserMutation,
+    syncZraCodesMutation,
+    previewZraSaleMutation,
+    testZraSaleMutation,
+    zraCurrentCodes,
+    zraPreviewResult,
+    zraTestResult,
+    runZraPreview,
+    runZraTest,
     openUserModal,
   } = useSettingsPage();
 
@@ -38,7 +47,7 @@ export default function SettingsPage() {
             className={cn('px-4 py-1.5 rounded-md text-sm font-medium transition-all capitalize',
               tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             )}>
-            {t === 'company' ? 'Company Profile' : 'Users & Access'}
+            {t === 'company' ? 'Company Profile' : t === 'users' ? 'Users & Access' : 'ZRA Admin'}
           </button>
         ))}
       </div>
@@ -208,6 +217,115 @@ export default function SettingsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ZRA admin */}
+      {tab === 'zra' && (
+        <div className="space-y-4">
+          <div className="card p-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+              <div>
+                <h2 className="font-semibold text-gray-900">ZRA Smart Invoice Admin</h2>
+                <p className="text-sm text-gray-500">Sync VSDC code tables and run payload preview/test from the UI.</p>
+              </div>
+              <button
+                onClick={() => syncZraCodesMutation.mutate()}
+                disabled={syncZraCodesMutation.isPending}
+                className="btn-secondary"
+              >
+                {syncZraCodesMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                Sync Code Tables
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700 overflow-auto">
+              <p className="font-semibold text-gray-900 mb-2">Current Active Codes</p>
+              <pre>{JSON.stringify(zraCurrentCodes || { message: 'No cache loaded yet. Run Sync Code Tables.' }, null, 2)}</pre>
+            </div>
+          </div>
+
+          <div className="card p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Diagnostics</h3>
+            <form onSubmit={zraForm.handleSubmit(runZraPreview)} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Invoice Number</label>
+                  <input {...zraForm.register('invoiceNumber', { required: true })} className="input" />
+                </div>
+                <div>
+                  <label className="label">Issue Date</label>
+                  <input {...zraForm.register('issueDate', { required: true })} type="date" className="input" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="label">Subtotal</label>
+                  <input {...zraForm.register('subtotal', { required: true })} type="number" step="0.01" className="input" />
+                </div>
+                <div>
+                  <label className="label">VAT Amount</label>
+                  <input {...zraForm.register('vatAmount', { required: true })} type="number" step="0.01" className="input" />
+                </div>
+                <div>
+                  <label className="label">Total</label>
+                  <input {...zraForm.register('total', { required: true })} type="number" step="0.01" className="input" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="label">Item Description</label>
+                  <input {...zraForm.register('description', { required: true })} className="input" />
+                </div>
+                <div>
+                  <label className="label">Quantity</label>
+                  <input {...zraForm.register('quantity', { required: true })} type="number" step="0.001" className="input" />
+                </div>
+                <div>
+                  <label className="label">Unit Price</label>
+                  <input {...zraForm.register('unitPrice', { required: true })} type="number" step="0.01" className="input" />
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Item Total</label>
+                <input {...zraForm.register('itemTotal', { required: true })} type="number" step="0.01" className="input max-w-xs" />
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button type="submit" disabled={previewZraSaleMutation.isPending} className="btn-secondary">
+                  {previewZraSaleMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                  Preview Payload
+                </button>
+                <button
+                  type="button"
+                  disabled={testZraSaleMutation.isPending}
+                  onClick={zraForm.handleSubmit(runZraTest)}
+                  className="btn-primary"
+                >
+                  {testZraSaleMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Run Test Submission
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <div className="card p-5">
+              <h4 className="font-semibold text-gray-900 mb-2">Preview Result</h4>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700 overflow-auto max-h-[24rem]">
+                <pre>{JSON.stringify(zraPreviewResult || { message: 'No preview yet.' }, null, 2)}</pre>
+              </div>
+            </div>
+            <div className="card p-5">
+              <h4 className="font-semibold text-gray-900 mb-2">Test Submission Result</h4>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700 overflow-auto max-h-[24rem]">
+                <pre>{JSON.stringify(zraTestResult || { message: 'No test submission yet.' }, null, 2)}</pre>
+              </div>
             </div>
           </div>
         </div>

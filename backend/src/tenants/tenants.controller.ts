@@ -1,23 +1,11 @@
 import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles, TenantId, CurrentUser } from '../common/decorators/current-user.decorator';
 import { TenantsService } from './tenants.service';
 import { AuditService } from '../audit/audit.service';
-
-class UpdateTenantDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() name?: string;
-  @ApiPropertyOptional({ description: 'Zambia TPIN' }) @IsOptional() @IsString() tpin?: string;
-  @ApiPropertyOptional({ description: 'VAT Registration Number' }) @IsOptional() @IsString() vrn?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() address?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() city?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() email?: string;
-  @ApiPropertyOptional() @IsOptional() @IsNumber() vatRate?: number;
-}
+import { UpdateTenantDto } from './dto';
 
 @ApiTags('tenants')
 @ApiBearerAuth()

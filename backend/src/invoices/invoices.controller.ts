@@ -4,45 +4,13 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import {
-  IsString, IsOptional, IsNumber, IsUUID, IsArray, ValidateNested,
-  IsIn, Min, IsDateString,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles, TenantId, CurrentUser } from '../common/decorators/current-user.decorator';
 import { InvoicesService } from './invoices.service';
 import { PdfService } from './pdf.service';
 import { AuditService } from '../audit/audit.service';
-
-class InvoiceItemDto {
-  @ApiPropertyOptional() @IsOptional() @IsUUID() productId?: string;
-  @ApiProperty() @IsString() description: string;
-  @ApiProperty() @IsNumber() @Min(0.001) quantity: number;
-  @ApiProperty() @IsNumber() @Min(0) unitPrice: number;
-  @ApiPropertyOptional() @IsOptional() @IsNumber() discountPercent?: number;
-  @ApiPropertyOptional({ default: 16 }) @IsOptional() @IsNumber() vatRate?: number;
-}
-
-class CreateInvoiceDto {
-  @ApiProperty() @IsUUID() customerId: string;
-  @ApiPropertyOptional() @IsOptional() @IsDateString() issueDate?: string;
-  @ApiPropertyOptional() @IsOptional() @IsDateString() dueDate?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() terms?: string;
-  @ApiPropertyOptional() @IsOptional() @IsNumber() discountPercent?: number;
-  @ApiProperty({ type: [InvoiceItemDto] })
-  @IsArray() @ValidateNested({ each: true }) @Type(() => InvoiceItemDto)
-  items: InvoiceItemDto[];
-}
-
-class MarkPaidDto {
-  @ApiProperty({ enum: ['cash', 'bank_transfer', 'mobile_money', 'cheque', 'card'] })
-  @IsIn(['cash', 'bank_transfer', 'mobile_money', 'cheque', 'card'])
-  paymentMethod: string;
-}
+import { CreateInvoiceDto, MarkPaidDto } from './dto';
 
 @ApiTags('invoices')
 @ApiBearerAuth()

@@ -137,3 +137,11 @@ export const usersApi = {
 export const auditApi = {
   list: (params?: any) => api.get('/audit', { params }).then(r => r.data),
 };
+
+// ── ZRA / VSDC ───────────────────────────────────────
+export const zraApi = {
+  syncCodeTables: () => api.post('/zra/code-tables/sync').then(r => r.data),
+  currentCodes: () => api.get('/zra/code-tables/current').then(r => r.data),
+  previewSale: (source: any) => api.post('/zra/diagnostics/preview-sale', { source }).then(r => r.data),
+  testSale: (source: any) => api.post('/zra/diagnostics/test-sale', { source }).then(r => r.data),
+};

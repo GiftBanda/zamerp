@@ -2,32 +2,12 @@ import {
   Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import {
-  IsString, IsOptional, IsNumber, IsIn, IsUUID, IsDateString, Min,
-} from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles, TenantId, CurrentUser } from '../common/decorators/current-user.decorator';
 import { AccountingService } from './accounting.service';
 import { AuditService } from '../audit/audit.service';
-
-class CreateTransactionDto {
-  @ApiProperty({ enum: ['income', 'expense', 'transfer'] })
-  @IsIn(['income', 'expense', 'transfer']) type: 'income' | 'expense' | 'transfer';
-  @ApiPropertyOptional() @IsOptional() @IsUUID() accountId?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() category?: string;
-  @ApiProperty() @IsString() description: string;
-  @ApiProperty() @IsNumber() @Min(0.01) amount: number;
-  @ApiProperty() @IsDateString() date: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() reference?: string;
-  @ApiPropertyOptional() @IsOptional() @IsUUID() invoiceId?: string;
-  @ApiPropertyOptional({ enum: ['cash', 'bank_transfer', 'mobile_money', 'cheque', 'card'] })
-  @IsOptional()
-  @IsIn(['cash', 'bank_transfer', 'mobile_money', 'cheque', 'card'])
-  paymentMethod?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
-}
+import { CreateTransactionDto } from './dto';
 
 @ApiTags('accounting')
 @ApiBearerAuth()

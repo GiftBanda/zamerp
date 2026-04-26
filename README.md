@@ -36,7 +36,7 @@ A production-ready, ZRA-compliant ERP system built for small and medium business
 ### ZRA-Ready Invoice Structure
 - Supplier TPIN & VRN on invoice header
 - Customer TPIN field
-- ZRA Fiscal Invoice Number (mock, ready to connect to ZRA API)
+- ZRA Fiscal Invoice Number from VSDC response (`rcptNo` fallback `totRcptNo`)
 - ZRA Verification Code
 - VAT breakdown per line item (16% default, configurable, per-item exemptions)
 - PDF export with ZRA compliance badge
@@ -189,15 +189,41 @@ Each generated invoice includes:
 | Field | Description |
 |-------|-------------|
 | `invoiceNumber` | Sequential: `INV-2024-00001` |
-| `zraInvoiceNumber` | ZRA Fiscal Invoice Number (mock: `ZRA-ABC123XY`) |
-| `zraVerificationCode` | Tamper verification code |
+| `zraInvoiceNumber` | VSDC receipt number from `/trnsSales/saveSales` |
+| `zraVerificationCode` | VSDC signature/verification value (`rcptSign`/`intrlData`) |
 | Supplier `TPIN` | From company settings |
 | Supplier `VRN` | VAT Registration Number |
 | Customer `TPIN` | From customer record |
 | VAT per line | Rate × net amount, per line item |
 | Total VAT | Sum of all line item VAT |
 
-> To connect to the actual ZRA API, replace `generateZraInvoiceNumber()` and `generateZraVerificationCode()` in `invoices.service.ts` with live API calls.
+### VSDC Integration Notes
+
+- Endpoint used from ZRA docs: `POST /trnsSales/saveSales`
+- Request base URL: `ZRA_VSDC_BASE_URL`
+- Mandatory request identity fields: `tpin`, `bhfId`
+- Success criteria: HTTP success and `resultCd === "000"`
+- Strict mode behavior (`ZRA_VSDC_STRICT_MODE=true`): failed VSDC submission aborts invoice creation
+
+### Required Backend Env Variables
+
+- `ZRA_VSDC_ENABLED`
+- `ZRA_VSDC_BASE_URL`
+- `ZRA_VSDC_TPIN`
+- `ZRA_VSDC_BHF_ID`
+- `ZRA_VSDC_CMC_KEY` (if enabled by your VSDC deployment)
+
+Optional controls:
+- `ZRA_VSDC_STRICT_MODE`
+- `ZRA_VSDC_USE_FALLBACK_VALUES`
+- `ZRA_VSDC_SALES_ENDPOINT`
+- `ZRA_VSDC_SALES_TYPE_CODE`
+- `ZRA_VSDC_RECEIPT_TYPE_CODE`
+- `ZRA_VSDC_PAYMENT_TYPE_CODE`
+- `ZRA_VSDC_TRANSACTION_PROGRESS_CODE`
+- `ZRA_VSDC_PACKAGE_UNIT_CODE`
+- `ZRA_VSDC_QUANTITY_UNIT_CODE`
+- `ZRA_VSDC_TAX_TYPE_CODE`
 
 ---
 
@@ -224,7 +250,7 @@ Each generated invoice includes:
 - [ ] Set `NODE_ENV=production`
 - [ ] Configure proper `DB_PASSWORD`
 - [ ] Add HTTPS/TLS termination (nginx/Caddy)
-- [ ] Connect to real ZRA Smart Invoice API
+- [ ] Validate VSDC code mappings against your approved branch setup (tax type, payment type, units)
 - [ ] Set up database backups
 - [ ] Configure rate limiting
 - [ ] Add email notifications (invoice sending)

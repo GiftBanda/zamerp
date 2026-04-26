@@ -1,10 +1,12 @@
 import {
   Injectable, Inject, NotFoundException, BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, and, desc, gte, lte, sql, inArray } from 'drizzle-orm';
 import { DATABASE_TOKEN } from '../database/database.module';
 import { InventoryService } from '../inventory/inventory.service';
+import { ZraVsdcService } from '../zra/zra-vsdc.service';
 import * as schema from '../database/schema';
 
 export interface CreateInvoiceDto {
@@ -30,6 +32,8 @@ export class InvoicesService {
   constructor(
     @Inject(DATABASE_TOKEN) private db: NodePgDatabase<typeof schema>,
     private inventoryService: InventoryService,
+    private readonly zraVsdcService: ZraVsdcService,
+    private readonly configService: ConfigService,
   ) {}
 
   // ── Number generation ───────────────────────────
@@ -44,13 +48,12 @@ export class InvoicesService {
     return `INV-${year}-${seq}`;
   }
 
-  // ── ZRA mock invoice number ─────────────────────
-  private generateZraInvoiceNumber(invoiceNumber: string): string {
+  private generateFallbackZraInvoiceNumber(): string {
     const ts = Date.now().toString(36).toUpperCase();
     return `ZRA-${ts}`;
   }
 
-  private generateZraVerificationCode(): string {
+  private generateFallbackZraVerificationCode(): string {
     return Math.random().toString(36).substring(2, 10).toUpperCase();
   }
 
@@ -171,14 +174,17 @@ export class InvoicesService {
     const { calculatedItems, subtotal, vatAmount, discountAmount, total } =
       this.calculateTotals(dto.items, dto.discountPercent || 0);
 
+    const useFallbackZraValues =
+      this.configService.get<string>('ZRA_VSDC_USE_FALLBACK_VALUES', 'true') === 'true';
+
     const [invoice] = await this.db
       .insert(schema.invoices)
       .values({
         tenantId,
         customerId: dto.customerId,
         invoiceNumber,
-        zraInvoiceNumber: this.generateZraInvoiceNumber(invoiceNumber),
-        zraVerificationCode: this.generateZraVerificationCode(),
+        zraInvoiceNumber: useFallbackZraValues ? this.generateFallbackZraInvoiceNumber() : null,
+        zraVerificationCode: useFallbackZraValues ? this.generateFallbackZraVerificationCode() : null,
         status: 'draft',
         issueDate: dto.issueDate ? new Date(dto.issueDate) : new Date(),
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
@@ -211,7 +217,34 @@ export class InvoicesService {
       );
     }
 
-    return this.findOne(invoice.id, tenantId);
+    const createdInvoice = await this.findOne(invoice.id, tenantId);
+    const zraResult = await this.zraVsdcService.submitSaleInvoice(createdInvoice as any, tenantId, userId);
+
+    if (zraResult.success) {
+      await this.db
+        .update(schema.invoices)
+        .set({
+          zraInvoiceNumber: zraResult.zraInvoiceNumber || createdInvoice.zraInvoiceNumber,
+          zraVerificationCode: zraResult.zraVerificationCode || createdInvoice.zraVerificationCode,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(schema.invoices.id, invoice.id), eq(schema.invoices.tenantId, tenantId)));
+
+      return this.findOne(invoice.id, tenantId);
+    }
+
+    // In strict mode, rollback invoice creation if VSDC submission fails.
+    if (this.zraVsdcService.isEnabled() && this.zraVsdcService.isStrictMode()) {
+      await this.db
+        .delete(schema.invoices)
+        .where(and(eq(schema.invoices.id, invoice.id), eq(schema.invoices.tenantId, tenantId)));
+
+      throw new BadRequestException(
+        `Failed to submit invoice to ZRA Smart Invoice: ${zraResult.resultMessage || 'unknown error'}`,
+      );
+    }
+
+    return createdInvoice;
   }
 
   async update(id: string, tenantId: string, dto: Partial<CreateInvoiceDto>) {
