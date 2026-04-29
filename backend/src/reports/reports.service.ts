@@ -5,6 +5,9 @@ import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
 import { DATABASE_TOKEN } from '../database/database.module';
 import * as schema from '../database/schema';
 
+const DEFAULT_DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
+const DEFAULT_DEEPSEEK_MODEL = 'deepseek-chat';
+
 @Injectable()
 export class ReportsService {
   constructor(
@@ -233,9 +236,11 @@ export class ReportsService {
   async generateDashboardAiSummary(tenantId: string, focus?: string) {
     const dashboard = await this.getDashboardSummary(tenantId);
     const fallbackSummary = this.buildFallbackSummary(dashboard, focus);
-    const apiKey = this.configService.get<string>('DEEPSEEK_API_KEY');
+    let config: { baseURL: string; model: string; apiKey: string };
 
-    if (!apiKey) {
+    try {
+      config = this.getDeepSeekConfig();
+    } catch {
       return {
         summary: fallbackSummary,
         source: 'fallback',
@@ -244,23 +249,17 @@ export class ReportsService {
       };
     }
 
-    const baseUrl = this.configService.get<string>(
-      'DEEPSEEK_API_URL',
-      this.configService.get<string>('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
-    );
-    const model = this.configService.get<string>('DEEPSEEK_MODEL', 'deepseek-chat');
-
     const prompt = this.buildDashboardPrompt(dashboard, focus);
 
     try {
-      const response = await fetch(`${baseUrl}/chat/completions`, {
+      const response = await fetch(`${config.baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${config.apiKey}`,
         },
         body: JSON.stringify({
-          model,
+          model: config.model,
           temperature: 0.3,
           messages: [
             {
@@ -289,17 +288,38 @@ export class ReportsService {
       return {
         summary,
         source: 'deepseek',
-        model,
+        model: config.model,
         generatedAt: new Date().toISOString(),
       };
     } catch {
       return {
         summary: fallbackSummary,
         source: 'fallback',
-        model,
+        model: config.model,
         generatedAt: new Date().toISOString(),
       };
     }
+  }
+
+  private getDeepSeekConfig() {
+    const apiKey = this.configService.get<string>('DEEPSEEK_API_KEY');
+    if (!apiKey) {
+      throw new Error('Missing DEEPSEEK_API_KEY');
+    }
+
+    return {
+      baseURL: this.normalizeBaseURL(
+        this.configService.get<string>('DEEPSEEK_API_URL')
+          ?? this.configService.get<string>('DEEPSEEK_BASE_URL')
+          ?? DEFAULT_DEEPSEEK_BASE_URL,
+      ),
+      model: this.configService.get<string>('DEEPSEEK_MODEL') ?? DEFAULT_DEEPSEEK_MODEL,
+      apiKey,
+    };
+  }
+
+  private normalizeBaseURL(baseURL: string) {
+    return baseURL.replace(/\/+$/, '');
   }
 
   private buildDashboardPrompt(dashboard: any, focus?: string) {
