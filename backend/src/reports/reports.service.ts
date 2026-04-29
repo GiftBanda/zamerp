@@ -244,7 +244,10 @@ export class ReportsService {
       };
     }
 
-    const baseUrl = this.configService.get<string>('DEEPSEEK_BASE_URL', 'https://api.deepseek.com');
+    const baseUrl = this.configService.get<string>(
+      'DEEPSEEK_API_URL',
+      this.configService.get<string>('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
+    );
     const model = this.configService.get<string>('DEEPSEEK_MODEL', 'deepseek-chat');
 
     const prompt = this.buildDashboardPrompt(dashboard, focus);
