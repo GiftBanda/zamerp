@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, and, ilike, lte, desc, sql } from 'drizzle-orm';
 import { DATABASE_TOKEN } from '../database/database.module';
@@ -171,6 +171,46 @@ export class InventoryService {
       .values({ ...data, tenantId })
       .returning();
     return cat;
+  }
+
+  async findOneCategory(id: string, tenantId: string) {
+    const [category] = await this.db
+      .select()
+      .from(schema.inventoryCategories)
+      .where(and(eq(schema.inventoryCategories.id, id), eq(schema.inventoryCategories.tenantId, tenantId)))
+      .limit(1);
+    if (!category) throw new NotFoundException('Category not found');
+    return category;
+  }
+
+  async updateCategory(id: string, tenantId: string, data: { name?: string; description?: string }) {
+    const [category] = await this.db
+      .update(schema.inventoryCategories)
+      .set({ ...data })
+      .where(and(eq(schema.inventoryCategories.id, id), eq(schema.inventoryCategories.tenantId, tenantId)))
+      .returning();
+    if (!category) throw new NotFoundException('Category not found');
+    return category;
+  }
+
+  async deleteCategory(id: string, tenantId: string) {
+    const linkedProducts = await this.db
+      .select({ id: schema.products.id })
+      .from(schema.products)
+      .where(and(eq(schema.products.categoryId, id), eq(schema.products.tenantId, tenantId)))
+      .limit(1);
+
+    if (linkedProducts.length) {
+      throw new ConflictException('Category cannot be deleted while products are assigned to it');
+    }
+
+    const [deleted] = await this.db
+      .delete(schema.inventoryCategories)
+      .where(and(eq(schema.inventoryCategories.id, id), eq(schema.inventoryCategories.tenantId, tenantId)))
+      .returning();
+
+    if (!deleted) throw new NotFoundException('Category not found');
+    return deleted;
   }
 
   async getInventoryStats(tenantId: string) {

@@ -65,6 +65,9 @@ export const inventoryApi = {
     api.get('/inventory/movements', { params: { productId } }).then(r => r.data),
   categories: () => api.get('/inventory/categories').then(r => r.data),
   createCategory: (data: any) => api.post('/inventory/categories', data).then(r => r.data),
+  updateCategory: (id: string, data: any) =>
+    api.put(`/inventory/categories/${id}`, data).then(r => r.data),
+  deleteCategory: (id: string) => api.delete(`/inventory/categories/${id}`).then(r => r.data),
 };
 
 // ── Invoices ───────────────────────────────────────────

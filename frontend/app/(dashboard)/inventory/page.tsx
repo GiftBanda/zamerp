@@ -4,7 +4,7 @@ import { useInventoryPage } from '@/hooks/useInventoryPage';
 import { formatCurrency, cn } from '@/lib/utils';
 import {
   Plus, Search, Edit2, Package, AlertTriangle, TrendingUp,
-  Sliders, X, Loader2, ArrowUpCircle, ArrowDownCircle,
+  Sliders, X, Loader2, ArrowUpCircle, ArrowDownCircle, Tags, Trash2,
 } from 'lucide-react';
 
 export default function InventoryPage() {
@@ -22,15 +22,23 @@ export default function InventoryPage() {
     setProductModal,
     adjustModal,
     setAdjustModal,
+    categoryModal,
+    setCategoryModal,
     prodForm,
     adjForm,
+    categoryForm,
     onProductSubmit,
     onAdjustSubmit,
+    onCategorySubmit,
     openEdit,
     openCreate,
     openAdjust,
+    openCategoryCreate,
+    openCategoryEdit,
+    deleteCategory,
     isProductPending,
     isAdjustPending,
+    isCategoryPending,
   } = useInventoryPage();
 
   return (
@@ -40,9 +48,14 @@ export default function InventoryPage() {
           <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
           <p className="text-sm text-gray-500 mt-0.5">{products.length} products</p>
         </div>
-        <button onClick={openCreate} className="btn-primary">
-          <Plus className="w-4 h-4" /> Add Product
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={openCategoryCreate} className="btn-secondary">
+            <Tags className="w-4 h-4" /> Add Category
+          </button>
+          <button onClick={openCreate} className="btn-primary">
+            <Plus className="w-4 h-4" /> Add Product
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -65,12 +78,12 @@ export default function InventoryPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-        {(['products', 'movements'] as const).map(t => (
+        {(['products', 'categories', 'movements'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn('px-4 py-1.5 rounded-md text-sm font-medium transition-all capitalize',
               tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             )}>
-            {t === 'movements' ? 'Stock Movements' : 'Products'}
+            {t === 'movements' ? 'Stock Movements' : t === 'categories' ? 'Categories' : 'Products'}
           </button>
         ))}
       </div>
@@ -202,6 +215,74 @@ export default function InventoryPage() {
         </div>
       )}
 
+      {/* Categories table */}
+      {tab === 'categories' && (
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="table-th">Category</th>
+                  <th className="table-th">Description</th>
+                  <th className="table-th">Created</th>
+                  <th className="table-th w-24">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {categories.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="table-td text-center text-gray-400 py-12">
+                      <Tags className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                      No categories found
+                    </td>
+                  </tr>
+                ) : categories.map((category: any) => (
+                  <tr key={category.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="table-td">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                          <Tags className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{category.name}</p>
+                          <p className="text-xs text-gray-400">Inventory category</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="table-td text-gray-600">
+                      {category.description || 'No description'}
+                    </td>
+                    <td className="table-td text-gray-500 text-sm">
+                      {category.createdAt
+                        ? new Date(category.createdAt).toLocaleDateString('en-ZM')
+                        : '—'}
+                    </td>
+                    <td className="table-td">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => openCategoryEdit(category)}
+                          className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors"
+                          title="Edit category"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => deleteCategory(category)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Delete category"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Product Modal */}
       {productModal.open && (
         <Modal title={productModal.product ? 'Edit Product' : 'Add Product'} onClose={() => setProductModal({ open: false })}>
@@ -301,6 +382,43 @@ export default function InventoryPage() {
               <button type="submit" disabled={isAdjustPending} className="btn-primary flex-1">
                 {isAdjustPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Apply Adjustment
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {categoryModal.open && (
+        <Modal
+          title={categoryModal.category ? 'Edit Category' : 'Create Category'}
+          onClose={() => setCategoryModal({ open: false })}
+        >
+          <form onSubmit={categoryForm.handleSubmit(onCategorySubmit)} className="space-y-4">
+            <div>
+              <label className="label">Category Name *</label>
+              <input
+                {...categoryForm.register('name', { required: true })}
+                className="input"
+                placeholder="Office Supplies"
+              />
+            </div>
+            <div>
+              <label className="label">Description</label>
+              <textarea
+                {...categoryForm.register('description')}
+                className="input resize-none"
+                rows={3}
+                placeholder="Short note about what belongs in this category"
+              />
+            </div>
+            <div className="rounded-xl bg-gray-50 p-3 text-xs text-gray-500">
+              New categories will be available immediately when creating or editing products.
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button type="button" onClick={() => setCategoryModal({ open: false })} className="btn-secondary flex-1">Cancel</button>
+              <button type="submit" disabled={isCategoryPending} className="btn-primary flex-1">
+                {isCategoryPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {categoryModal.category ? 'Save Changes' : 'Create Category'}
               </button>
             </div>
           </form>

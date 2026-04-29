@@ -127,10 +127,62 @@ export class InventoryController {
 
   @Post('categories')
   @Roles('admin')
-  createCategory(
+  async createCategory(
     @TenantId() tenantId: string,
+    @CurrentUser() user: any,
     @Body() dto: { name: string; description?: string },
   ) {
-    return this.inventoryService.createCategory(tenantId, dto);
+    const category = await this.inventoryService.createCategory(tenantId, dto);
+    await this.auditService.log({
+      tenantId,
+      userId: user.id,
+      action: 'CREATE',
+      resource: 'inventory_categories',
+      resourceId: category.id,
+      newValues: dto,
+    });
+    return category;
+  }
+
+  @Put('categories/:id')
+  @Roles('admin')
+  async updateCategory(
+    @Param('id') id: string,
+    @TenantId() tenantId: string,
+    @CurrentUser() user: any,
+    @Body() dto: { name?: string; description?: string },
+  ) {
+    const before = await this.inventoryService.findOneCategory(id, tenantId);
+    const category = await this.inventoryService.updateCategory(id, tenantId, dto);
+    await this.auditService.log({
+      tenantId,
+      userId: user.id,
+      action: 'UPDATE',
+      resource: 'inventory_categories',
+      resourceId: id,
+      oldValues: before,
+      newValues: dto,
+    });
+    return category;
+  }
+
+  @Delete('categories/:id')
+  @Roles('admin')
+  async deleteCategory(
+    @Param('id') id: string,
+    @TenantId() tenantId: string,
+    @CurrentUser() user: any,
+  ) {
+    const before = await this.inventoryService.findOneCategory(id, tenantId);
+    const category = await this.inventoryService.deleteCategory(id, tenantId);
+    await this.auditService.log({
+      tenantId,
+      userId: user.id,
+      action: 'DELETE',
+      resource: 'inventory_categories',
+      resourceId: id,
+      oldValues: before,
+    });
+    return category;
   }
 }

@@ -5,6 +5,19 @@ import * as bcrypt from 'bcrypt';
 import { DATABASE_TOKEN } from '../database/database.module';
 import * as schema from '../database/schema';
 
+const DEFAULT_CATEGORY_SEED = [
+  { name: 'Office Supplies', description: 'General office and stationery items.' },
+  { name: 'Electronics', description: 'Computers, accessories, and electronic equipment.' },
+  { name: 'Furniture', description: 'Office and business furniture.' },
+  { name: 'Raw Materials', description: 'Input materials used in production.' },
+  { name: 'Finished Goods', description: 'Products ready for sale.' },
+  { name: 'Services', description: 'Non-stock service offerings.' },
+  { name: 'Maintenance', description: 'Repair and maintenance items.' },
+  { name: 'Utilities', description: 'Power, water, and utility-related items.' },
+  { name: 'Fuel & Transport', description: 'Fuel and transportation-related items.' },
+  { name: 'Miscellaneous', description: 'Items that do not fit other categories.' },
+];
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -116,6 +129,7 @@ export class UsersService {
 
     // Seed default accounts chart
     await this.seedDefaultAccounts(tenant.id);
+    await this.seedDefaultCategories(tenant.id);
 
     return { tenant, user };
   }
@@ -191,6 +205,12 @@ export class UsersService {
 
     await this.db.insert(schema.accounts).values(
       defaults.map(a => ({ ...a, tenantId })),
+    );
+  }
+
+  private async seedDefaultCategories(tenantId: string) {
+    await this.db.insert(schema.inventoryCategories).values(
+      DEFAULT_CATEGORY_SEED.map(category => ({ ...category, tenantId })),
     );
   }
 }
