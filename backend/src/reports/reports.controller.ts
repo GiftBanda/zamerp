@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantId } from '../common/decorators/current-user.decorator';
@@ -15,6 +15,15 @@ export class ReportsController {
   @ApiOperation({ summary: 'Get full dashboard summary with KPIs' })
   getDashboard(@TenantId() tenantId: string) {
     return this.reportsService.getDashboardSummary(tenantId);
+  }
+
+  @Post('dashboard/ai-summary')
+  @ApiOperation({ summary: 'Generate an AI summary for the dashboard' })
+  generateAiDashboardSummary(
+    @TenantId() tenantId: string,
+    @Body('focus') focus?: string,
+  ) {
+    return this.reportsService.generateDashboardAiSummary(tenantId, focus);
   }
 
   @Get('profit-loss')

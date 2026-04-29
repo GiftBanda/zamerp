@@ -1,7 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { reportsApi, invoicesApi } from '@/lib/api';
+import { toast } from 'sonner';
 
 export function useDashboardPage() {
+  const [aiSummary, setAiSummary] = useState<any>(null);
   const { data: summary, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: reportsApi.dashboard,
@@ -28,6 +31,15 @@ export function useDashboardPage() {
     year: 'numeric',
   });
 
+  const aiSummaryMutation = useMutation({
+    mutationFn: (focus?: string) => reportsApi.aiSummary(focus),
+    onSuccess: (data) => {
+      setAiSummary(data);
+      toast.success(data?.source === 'deepseek' ? 'AI summary generated' : 'Summary generated with local fallback');
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.message || 'Failed to generate AI summary'),
+  });
+
   return {
     summary,
     recentInvoices,
@@ -36,5 +48,8 @@ export function useDashboardPage() {
     revenueChange,
     chartData,
     todayLabel,
+    aiSummary,
+    generateAiSummary: (focus?: string) => aiSummaryMutation.mutate(focus),
+    isAiSummaryPending: aiSummaryMutation.isPending,
   };
 }

@@ -1,15 +1,15 @@
 'use client';
 
 import { useDashboardPage } from '@/hooks/useDashboardPage';
-import { formatCurrency, formatDate, STATUS_COLORS } from '@/lib/utils';
+import { formatCurrency, STATUS_COLORS } from '@/lib/utils';
 import {
   TrendingUp, TrendingDown, FileText, Users, Package,
-  AlertTriangle, ArrowRight, DollarSign, Activity,
+  AlertTriangle, ArrowRight, DollarSign, Activity, Sparkles, Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar,
+  ResponsiveContainer,
 } from 'recharts';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +22,9 @@ export default function DashboardPage() {
     revenueChange,
     chartData,
     todayLabel,
+    aiSummary,
+    generateAiSummary,
+    isAiSummaryPending,
   } = useDashboardPage();
 
   if (isLoading) return <PageSkeleton />;
@@ -29,12 +32,46 @@ export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          {todayLabel}
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {todayLabel}
+          </p>
+        </div>
+        <button
+          onClick={() => generateAiSummary()}
+          disabled={isAiSummaryPending}
+          className="btn-secondary"
+        >
+          {isAiSummaryPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {isAiSummaryPending ? 'Generating summary...' : 'Generate AI Summary'}
+        </button>
       </div>
+
+      {aiSummary && (
+        <div className="card p-5 border border-brand-100 bg-gradient-to-br from-brand-50 to-white">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">AI Business Summary</h3>
+                <p className="text-xs text-gray-500">
+                  {aiSummary.source === 'deepseek' ? `DeepSeek${aiSummary.model ? ` • ${aiSummary.model}` : ''}` : 'Local fallback summary'}
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400">
+              {new Date(aiSummary.generatedAt).toLocaleString('en-ZM')}
+            </p>
+          </div>
+          <div className="mt-4 whitespace-pre-wrap text-sm leading-6 text-gray-700">
+            {aiSummary.summary}
+          </div>
+        </div>
+      )}
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">

@@ -118,6 +118,8 @@ export const accountingApi = {
 // ── Reports ────────────────────────────────────────────
 export const reportsApi = {
   dashboard: () => api.get('/reports/dashboard').then(r => r.data),
+  aiSummary: (focus?: string) =>
+    api.post('/reports/dashboard/ai-summary', focus ? { focus } : {}).then(r => r.data),
   profitLoss: (from: string, to: string) =>
     api.get('/reports/profit-loss', { params: { from, to } }).then(r => r.data),
   aging: () => api.get('/reports/aging').then(r => r.data),
