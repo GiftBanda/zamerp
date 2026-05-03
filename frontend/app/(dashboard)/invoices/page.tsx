@@ -34,7 +34,6 @@ export default function InvoicesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-          <p className="text-sm text-gray-500 mt-0.5">ZRA-compliant tax invoices</p>
         </div>
         <Link href="/invoices/new" className="btn-primary">
           <Plus className="w-4 h-4" /> New Invoice

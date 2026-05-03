@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { tenantsApi, usersApi, zraApi } from '@/lib/api';
 
-const TABS = ['company', 'users', 'zra'] as const;
+const TABS = ['company', 'users'] as const;
 type Tab = typeof TABS[number];
 
 const ROLES = ['admin', 'staff', 'accountant', 'viewer'];
@@ -28,11 +28,6 @@ export function useSettingsPage() {
     queryKey: ['users-list'],
     queryFn: usersApi.list,
     enabled: tab === 'users',
-  });
-  const { data: zraCurrentCodes, refetch: refetchZraCurrentCodes } = useQuery({
-    queryKey: ['zra-current-codes'],
-    queryFn: zraApi.currentCodes,
-    enabled: tab === 'zra',
   });
 
   const tenantForm = useForm<any>({ values: tenant });
@@ -79,15 +74,6 @@ export function useSettingsPage() {
     },
   });
 
-  const syncZraCodesMutation = useMutation({
-    mutationFn: zraApi.syncCodeTables,
-    onSuccess: async () => {
-      toast.success('ZRA code tables synced');
-      await refetchZraCurrentCodes();
-    },
-    onError: (e: any) => toast.error(e?.response?.data?.message || 'Code sync failed'),
-  });
-
   const previewZraSaleMutation = useMutation({
     mutationFn: zraApi.previewSale,
     onSuccess: (data: any) => {
@@ -95,16 +81,6 @@ export function useSettingsPage() {
       toast.success('ZRA preview generated');
     },
     onError: (e: any) => toast.error(e?.response?.data?.message || 'Preview failed'),
-  });
-
-  const testZraSaleMutation = useMutation({
-    mutationFn: zraApi.testSale,
-    onSuccess: (data: any) => {
-      setZraTestResult(data);
-      toast.success(data?.success ? 'ZRA test sale submitted' : 'ZRA test sale failed');
-      refetchZraCurrentCodes();
-    },
-    onError: (e: any) => toast.error(e?.response?.data?.message || 'Test sale failed'),
   });
 
   const buildZraSource = (data: any) => ({
@@ -129,11 +105,6 @@ export function useSettingsPage() {
     previewZraSaleMutation.mutate(buildZraSource(data));
   };
 
-  const runZraTest = (data: any) => {
-    setZraTestResult(null);
-    testZraSaleMutation.mutate(buildZraSource(data));
-  };
-
   const openUserModal = () => {
     userForm.reset({ role: 'staff' });
     setUserModal(true);
@@ -154,14 +125,10 @@ export function useSettingsPage() {
     updateTenantMutation,
     createUserMutation,
     updateUserMutation,
-    syncZraCodesMutation,
     previewZraSaleMutation,
-    testZraSaleMutation,
-    zraCurrentCodes,
     zraPreviewResult,
     zraTestResult,
     runZraPreview,
-    runZraTest,
     openUserModal,
   };
 }

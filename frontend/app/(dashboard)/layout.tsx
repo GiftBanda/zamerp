@@ -153,13 +153,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Breadcrumb / page title area */}
           <div className="flex-1" />
 
-          {/* Right actions */}
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:flex items-center gap-1.5 text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-1">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              ZRA Compliant
-            </span>
-          </div>
         </header>
 
         {/* Page content */}
