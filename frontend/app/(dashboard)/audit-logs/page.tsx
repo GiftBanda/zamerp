@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomTable } from '@/components/CustomTable';
 import { useAuditLogsPage } from '@/hooks/useAuditLogsPage';
 import { formatDateTime, cn } from '@/lib/utils';
 import { Shield } from 'lucide-react';
@@ -50,74 +51,68 @@ export default function AuditLogsPage() {
       {/* Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="table-th">Timestamp</th>
-                <th className="table-th">User</th>
-                <th className="table-th">Action</th>
-                <th className="table-th">Resource</th>
-                <th className="table-th">Details</th>
-                <th className="table-th">IP Address</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {isLoading ? (
-                [...Array(8)].map((_, i) => (
-                  <tr key={i}>{[...Array(6)].map((_, j) => (
-                    <td key={j} className="table-td"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
-                  ))}</tr>
-                ))
-              ) : logs.length === 0 ? (
-                <tr><td colSpan={6} className="table-td text-center text-gray-400 py-12">
-                  <Shield className="w-8 h-8 mx-auto mb-2 opacity-40" />No audit logs yet
-                </td></tr>
-              ) : logs.map((log: any) => (
-                <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="table-td text-xs text-gray-500 whitespace-nowrap">
-                    {formatDateTime(log.createdAt)}
-                  </td>
-                  <td className="table-td">
-                    {log.user ? (
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {log.user.firstName} {log.user.lastName}
-                        </p>
-                        <p className="text-xs text-gray-400">{log.user.email}</p>
-                      </div>
-                    ) : <span className="text-gray-400 text-xs">System</span>}
-                  </td>
-                  <td className="table-td">
-                    <span className={cn('badge', actionColors[log.action] || 'bg-gray-100 text-gray-600')}>
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className="table-td">
+
+          <CustomTable
+            isLoading={isLoading}
+            emptyMessage="No audit logs yet"
+            columns={[
+              {
+                key: 'createdAt',
+                label: 'Timestamp',
+                render: (v) => (
+                  <span className="text-xs text-gray-500 whitespace-nowrap">{formatDateTime(v)}</span>
+                ),
+              },
+              {
+                key: 'user',
+                label: 'User',
+                render: (v) =>
+                  v ? (
                     <div>
-                      <span className="font-medium text-gray-900 capitalize">{log.resource}</span>
-                      {log.resourceId && (
-                        <p className="text-xs text-gray-400 font-mono mt-0.5 truncate max-w-[100px]">
-                          {log.resourceId}
-                        </p>
-                      )}
+                      <p className="text-sm font-medium text-gray-900">{v.firstName} {v.lastName}</p>
+                      <p className="text-xs text-gray-400">{v.email}</p>
                     </div>
-                  </td>
-                  <td className="table-td max-w-[200px]">
-                    {log.metadata || log.newValues ? (
-                      <pre className="text-xs text-gray-500 bg-gray-50 rounded p-1.5 overflow-hidden max-h-16 truncate">
-                        {JSON.stringify(log.metadata || log.newValues, null, 1)}
-                      </pre>
-                    ) : <span className="text-gray-400">—</span>}
-                  </td>
-                  <td className="table-td">
-                    {log.ipAddress ? (
-                      <span className="font-mono text-xs text-gray-500">{log.ipAddress}</span>
-                    ) : <span className="text-gray-400">—</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  ) : <span className="text-gray-400 text-xs">System</span>,
+              },
+              {
+                key: 'action',
+                label: 'Action',
+                render: (v) => (
+                  <span className={cn('badge', actionColors[v] || 'bg-gray-100 text-gray-600')}>{v}</span>
+                ),
+              },
+              {
+                key: 'resource',
+                label: 'Resource',
+                render: (v, row) => (
+                  <div>
+                    <span className="font-medium text-gray-900 capitalize">{v}</span>
+                    {row.resourceId && (
+                      <p className="text-xs text-gray-400 font-mono mt-0.5 truncate max-w-[100px]">{row.resourceId}</p>
+                    )}
+                  </div>
+                ),
+              },
+              {
+                key: 'metadata',
+                label: 'Details',
+                render: (v, row) =>
+                  v || row.newValues ? (
+                    <pre className="text-xs text-gray-500 bg-gray-50 rounded p-1.5 overflow-hidden max-h-16 truncate">
+                      {JSON.stringify(v || row.newValues, null, 1)}
+                    </pre>
+                  ) : <span className="text-gray-400">—</span>,
+              },
+              {
+                key: 'ipAddress',
+                label: 'IP Address',
+                render: (v) =>
+                  v ? <span className="font-mono text-xs text-gray-500">{v}</span>
+                    : <span className="text-gray-400">—</span>,
+              },
+            ]}
+            data={logs}
+          />
         </div>
       </div>
     </div>

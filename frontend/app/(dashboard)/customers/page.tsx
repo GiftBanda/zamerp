@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomTable } from '@/components/CustomTable';
 import { useCustomersPage } from '@/hooks/useCustomersPage';
 import { Plus, Search, Edit2, Trash2, Mail, Phone, Building, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -49,91 +50,67 @@ export default function CustomersPage() {
       {/* Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="table-th">Customer</th>
-                <th className="table-th">Contact</th>
-                <th className="table-th">City</th>
-                <th className="table-th">TPIN</th>
-                <th className="table-th">Status</th>
-                <th className="table-th w-20">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {isLoading ? (
-                [...Array(5)].map((_, i) => (
-                  <tr key={i}>
-                    {[...Array(6)].map((_, j) => (
-                      <td key={j} className="table-td">
-                        <div className="h-4 bg-gray-100 rounded animate-pulse" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : customers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="table-td text-center text-gray-400 py-12">
-                    <Building className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    No customers found
-                  </td>
-                </tr>
-              ) : (
-                customers.map((c: any) => (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="table-td">
-                      <div>
-                        <p className="font-medium text-gray-900">{c.name}</p>
-                        {c.contactPerson && <p className="text-xs text-gray-400">{c.contactPerson}</p>}
-                      </div>
-                    </td>
-                    <td className="table-td">
-                      <div className="space-y-0.5">
-                        {c.email && (
-                          <p className="flex items-center gap-1 text-xs text-gray-500">
-                            <Mail className="w-3 h-3" /> {c.email}
-                          </p>
-                        )}
-                        {c.phone && (
-                          <p className="flex items-center gap-1 text-xs text-gray-500">
-                            <Phone className="w-3 h-3" /> {c.phone}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="table-td text-gray-600">{c.city || '—'}</td>
-                    <td className="table-td">
-                      {c.tpin ? (
-                        <span className="font-mono text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{c.tpin}</span>
-                      ) : '—'}
-                    </td>
-                    <td className="table-td">
-                      <span className={cn('badge', c.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
-                        {c.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="table-td">
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => openEdit(c)} className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors">
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm('Deactivate this customer?')) {
-                              deleteCustomer(c.id);
-                            }
-                          }}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <CustomTable
+            isLoading={isLoading}
+            emptyMessage={<><Building className="w-8 h-8 mx-auto mb-2 opacity-40" />No customers found</>}
+            columns={[
+              {
+                key: 'name',
+                label: 'Customer',
+                render: (_, c) => (
+                  <div>
+                    <p className="font-medium text-gray-900">{c.name}</p>
+                    {c.contactPerson && <p className="text-xs text-gray-400">{c.contactPerson}</p>}
+                  </div>
+                ),
+              },
+              {
+                key: 'email',
+                label: 'Contact',
+                render: (_, c) => (
+                  <div className="space-y-0.5">
+                    {c.email && <p className="flex items-center gap-1 text-xs text-gray-500"><Mail className="w-3 h-3" /> {c.email}</p>}
+                    {c.phone && <p className="flex items-center gap-1 text-xs text-gray-500"><Phone className="w-3 h-3" /> {c.phone}</p>}
+                  </div>
+                ),
+              },
+              { key: 'city', label: 'City', render: (v) => v || '—' },
+              {
+                key: 'tpin',
+                label: 'TPIN',
+                render: (v) => v
+                  ? <span className="font-mono text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{v}</span>
+                  : '—',
+              },
+              {
+                key: 'isActive',
+                label: 'Status',
+                render: (v) => (
+                  <span className={cn('badge', v ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
+                    {v ? 'Active' : 'Inactive'}
+                  </span>
+                ),
+              },
+              {
+                key: 'id',
+                label: 'Actions',
+                render: (_, c) => (
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => openEdit(c)} className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => { if (confirm('Deactivate this customer?')) deleteCustomer(c.id); }}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ),
+              },
+            ]}
+            data={customers}
+          />
         </div>
       </div>
 

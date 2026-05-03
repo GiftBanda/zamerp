@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomTable } from '@/components/CustomTable';
 import { useAccountingPage } from '@/hooks/useAccountingPage';
 import { formatCurrency, formatDate, PAYMENT_METHODS, cn } from '@/lib/utils';
 import {
@@ -114,59 +115,51 @@ export default function AccountingPage() {
 
           <div className="card overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="table-th">Date</th>
-                    <th className="table-th">Type</th>
-                    <th className="table-th">Description</th>
-                    <th className="table-th">Category</th>
-                    <th className="table-th">Method</th>
-                    <th className="table-th text-right">Amount</th>
-                    <th className="table-th w-12" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {isLoading ? (
-                    [...Array(6)].map((_, i) => (
-                      <tr key={i}>{[...Array(7)].map((_, j) => (
-                        <td key={j} className="table-td"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
-                      ))}</tr>
-                    ))
-                  ) : transactions.length === 0 ? (
-                    <tr><td colSpan={7} className="table-td text-center text-gray-400 py-12">No transactions yet</td></tr>
-                  ) : transactions.map((t: any) => (
-                    <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="table-td text-gray-600 text-xs">{formatDate(t.date)}</td>
-                      <td className="table-td">
-                        <span className={cn('badge',
-                          t.type === 'income' ? 'bg-green-100 text-green-700' :
-                          t.type === 'expense' ? 'bg-red-100 text-red-700' :
-                          'bg-blue-100 text-blue-700'
-                        )}>
-                          {t.type}
-                        </span>
-                      </td>
-                      <td className="table-td font-medium text-gray-900">{t.description}</td>
-                      <td className="table-td text-gray-500">{t.category || '—'}</td>
-                      <td className="table-td text-gray-500 capitalize text-xs">
-                        {t.paymentMethod?.replace('_', ' ') || '—'}
-                      </td>
-                      <td className="table-td text-right">
-                        <span className={cn('font-semibold', t.type === 'income' ? 'text-green-600' : t.type === 'expense' ? 'text-red-500' : 'text-gray-900')}>
-                          {t.type === 'expense' ? '-' : ''}{formatCurrency(t.amount)}
-                        </span>
-                      </td>
-                      <td className="table-td">
-                        <button onClick={() => { if (confirm('Delete this transaction?')) deleteMutation.mutate(t.id); }}
-                          className="p-1 text-gray-300 hover:text-red-500 transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <CustomTable
+                isLoading={isLoading}
+                emptyMessage="No transactions yet"
+                columns={[
+                  { key: 'date', label: 'Date', render: (v) => <span className="text-gray-600 text-xs">{formatDate(v)}</span> },
+                  {
+                    key: 'type',
+                    label: 'Type',
+                    render: (v) => (
+                      <span className={cn('badge',
+                        v === 'income' ? 'bg-green-100 text-green-700' :
+                        v === 'expense' ? 'bg-red-100 text-red-700' :
+                        'bg-blue-100 text-blue-700'
+                      )}>{v}</span>
+                    ),
+                  },
+                  { key: 'description', label: 'Description', render: (v) => <span className="font-medium text-gray-900">{v}</span> },
+                  { key: 'category', label: 'Category', render: (v) => <span className="text-gray-500">{v || '—'}</span> },
+                  {
+                    key: 'paymentMethod',
+                    label: 'Method',
+                    render: (v) => <span className="text-gray-500 capitalize text-xs">{v?.replace('_', ' ') || '—'}</span>,
+                  },
+                  {
+                    key: 'amount',
+                    label: 'Amount',
+                    render: (v, t) => (
+                      <span className={cn('font-semibold', t.type === 'income' ? 'text-green-600' : t.type === 'expense' ? 'text-red-500' : 'text-gray-900')}>
+                        {t.type === 'expense' ? '-' : ''}{formatCurrency(v)}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'id',
+                    label: '',
+                    render: (_, t) => (
+                      <button onClick={() => { if (confirm('Delete this transaction?')) deleteMutation.mutate(t.id); }}
+                        className="p-1 text-gray-300 hover:text-red-500 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    ),
+                  },
+                ]}
+                data={transactions}
+              />
             </div>
           </div>
         </>
@@ -212,37 +205,34 @@ export default function AccountingPage() {
       {/* Accounts tab */}
       {tab === 'accounts' && (
         <div className="card overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="table-th">Code</th>
-                <th className="table-th">Account Name</th>
-                <th className="table-th">Type</th>
-                <th className="table-th">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {accounts.map((a: any) => (
-                <tr key={a.id} className="hover:bg-gray-50">
-                  <td className="table-td font-mono text-sm text-brand-600">{a.code}</td>
-                  <td className="table-td font-medium text-gray-900">{a.name}</td>
-                  <td className="table-td">
-                    <span className={cn('badge capitalize',
-                      a.type === 'income' ? 'bg-green-100 text-green-700' :
-                      a.type === 'expense' ? 'bg-red-100 text-red-700' :
-                      a.type === 'asset' ? 'bg-blue-100 text-blue-700' :
-                      'bg-gray-100 text-gray-600'
-                    )}>{a.type}</span>
-                  </td>
-                  <td className="table-td">
-                    <span className={cn('badge', a.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
-                      {a.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <CustomTable
+            columns={[
+              { key: 'code', label: 'Code', render: (v) => <span className="font-mono text-sm text-brand-600">{v}</span> },
+              { key: 'name', label: 'Account Name', render: (v) => <span className="font-medium text-gray-900">{v}</span> },
+              {
+                key: 'type',
+                label: 'Type',
+                render: (v) => (
+                  <span className={cn('badge capitalize',
+                    v === 'income' ? 'bg-green-100 text-green-700' :
+                    v === 'expense' ? 'bg-red-100 text-red-700' :
+                    v === 'asset' ? 'bg-blue-100 text-blue-700' :
+                    'bg-gray-100 text-gray-600'
+                  )}>{v}</span>
+                ),
+              },
+              {
+                key: 'isActive',
+                label: 'Status',
+                render: (v) => (
+                  <span className={cn('badge', v ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
+                    {v ? 'Active' : 'Inactive'}
+                  </span>
+                ),
+              },
+            ]}
+            data={accounts}
+          />
         </div>
       )}
 

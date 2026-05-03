@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomTable } from '@/components/CustomTable';
 import { useSettingsPage } from '@/hooks/useSettingsPage';
 import { formatDate, cn } from '@/lib/utils';
 import { Save, Plus, Loader2, X, Users, Building2, RefreshCw, Eye, Send } from 'lucide-react';
@@ -125,56 +126,60 @@ export default function SettingsPage() {
           </div>
 
           <div className="card overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="table-th">User</th>
-                  <th className="table-th">Role</th>
-                  <th className="table-th">Status</th>
-                  <th className="table-th">Last Login</th>
-                  <th className="table-th">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {users.map((u: any) => (
-                  <tr key={u.id} className="hover:bg-gray-50">
-                    <td className="table-td">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-brand-100 text-brand-700 rounded-full flex items-center justify-center text-xs font-bold">
-                          {u.firstName[0]}{u.lastName[0]}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{u.firstName} {u.lastName}</p>
-                          <p className="text-xs text-gray-400">{u.email}</p>
-                        </div>
+            <CustomTable
+              columns={[
+                {
+                  key: 'firstName',
+                  label: 'User',
+                  render: (_, u) => (
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-brand-100 text-brand-700 rounded-full flex items-center justify-center text-xs font-bold">
+                        {u.firstName[0]}{u.lastName[0]}
                       </div>
-                    </td>
-                    <td className="table-td">
-                      <span className={cn('badge capitalize', roleColors[u.role] || 'bg-gray-100 text-gray-600')}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="table-td">
-                      <span className={cn('badge', u.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
-                        {u.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="table-td text-gray-500 text-sm">
-                      {u.lastLoginAt ? formatDate(u.lastLoginAt) : 'Never'}
-                    </td>
-                    <td className="table-td">
-                      <select
-                        defaultValue={u.role}
-                        onChange={e => updateUserMutation.mutate({ id: u.id, data: { role: e.target.value } })}
-                        className="text-xs border border-gray-200 rounded px-2 py-1 text-gray-600 focus:outline-none focus:border-brand-400"
-                      >
-                        {roles.map(r => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <div>
+                        <p className="font-medium text-gray-900">{u.firstName} {u.lastName}</p>
+                        <p className="text-xs text-gray-400">{u.email}</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'role',
+                  label: 'Role',
+                  render: (v) => (
+                    <span className={cn('badge capitalize', roleColors[v] || 'bg-gray-100 text-gray-600')}>{v}</span>
+                  ),
+                },
+                {
+                  key: 'isActive',
+                  label: 'Status',
+                  render: (v) => (
+                    <span className={cn('badge', v ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
+                      {v ? 'Active' : 'Inactive'}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'lastLoginAt',
+                  label: 'Last Login',
+                  render: (v) => <span className="text-gray-500 text-sm">{v ? formatDate(v) : 'Never'}</span>,
+                },
+                {
+                  key: 'id',
+                  label: 'Actions',
+                  render: (_, u) => (
+                    <select
+                      defaultValue={u.role}
+                      onChange={e => updateUserMutation.mutate({ id: u.id, data: { role: e.target.value } })}
+                      className="text-xs border border-gray-200 rounded px-2 py-1 text-gray-600 focus:outline-none focus:border-brand-400"
+                    >
+                      {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  ),
+                },
+              ]}
+              data={users}
+            />
           </div>
 
           {/* Role permissions guide */}

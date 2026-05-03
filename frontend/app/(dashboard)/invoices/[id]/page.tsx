@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomTable } from '@/components/CustomTable';
 import { useInvoiceDetailPage } from '@/hooks/useInvoiceDetailPage';
 import { formatCurrency, formatDate, STATUS_COLORS, PAYMENT_METHODS, cn } from '@/lib/utils';
 import {
@@ -154,33 +155,26 @@ export default function InvoiceDetailPage() {
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-900">Line Items</h2>
         </div>
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="table-th">Description</th>
-              <th className="table-th text-right">Qty</th>
-              <th className="table-th text-right">Unit Price</th>
-              <th className="table-th text-right">Disc%</th>
-              <th className="table-th text-right">VAT%</th>
-              <th className="table-th text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {invoice.items?.map((item: any) => (
-              <tr key={item.id} className="hover:bg-gray-50">
-                <td className="table-td">
-                  <p className="font-medium text-gray-900">{item.description}</p>
+        <CustomTable
+          columns={[
+            {
+              key: 'description',
+              label: 'Description',
+              render: (v, item) => (
+                <div>
+                  <p className="font-medium text-gray-900">{v}</p>
                   {item.product && <p className="text-xs text-gray-400">SKU: {item.product.sku || 'N/A'}</p>}
-                </td>
-                <td className="table-td text-right">{Number(item.quantity)}</td>
-                <td className="table-td text-right">{formatCurrency(item.unitPrice)}</td>
-                <td className="table-td text-right">{Number(item.discountPercent)}%</td>
-                <td className="table-td text-right">{Number(item.vatRate)}%</td>
-                <td className="table-td text-right font-semibold text-gray-900">{formatCurrency(item.total)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              ),
+            },
+            { key: 'quantity', label: 'Qty', render: (v) => <span className="text-right block">{Number(v)}</span> },
+            { key: 'unitPrice', label: 'Unit Price', render: (v) => <span className="text-right block">{formatCurrency(v)}</span> },
+            { key: 'discountPercent', label: 'Disc%', render: (v) => <span className="text-right block">{Number(v)}%</span> },
+            { key: 'vatRate', label: 'VAT%', render: (v) => <span className="text-right block">{Number(v)}%</span> },
+            { key: 'total', label: 'Total', render: (v) => <span className="text-right block font-semibold text-gray-900">{formatCurrency(v)}</span> },
+          ]}
+          data={invoice.items ?? []}
+        />
 
         {/* Totals */}
         <div className="flex justify-end p-5">

@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomTable } from '@/components/CustomTable';
 import { useInventoryPage } from '@/hooks/useInventoryPage';
 import { formatCurrency, cn } from '@/lib/utils';
 import {
@@ -100,69 +101,76 @@ export default function InventoryPage() {
       {tab === 'products' && (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="table-th">Product</th>
-                  <th className="table-th">SKU</th>
-                  <th className="table-th">Cost</th>
-                  <th className="table-th">Sell Price</th>
-                  <th className="table-th">Stock</th>
-                  <th className="table-th">Status</th>
-                  <th className="table-th w-24">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {isLoading ? (
-                  [...Array(5)].map((_, i) => <SkeletonRow key={i} cols={7} />)
-                ) : products.length === 0 ? (
-                  <tr><td colSpan={7} className="table-td text-center text-gray-400 py-12">
-                    <Package className="w-8 h-8 mx-auto mb-2 opacity-40" />No products found
-                  </td></tr>
-                ) : products.map((p: any) => {
-                  const lowStock = Number(p.quantityOnHand) <= Number(p.reorderLevel);
-                  return (
-                    <tr key={p.id} className={cn('hover:bg-gray-50 transition-colors', lowStock && 'bg-red-50/30')}>
-                      <td className="table-td">
-                        <div>
-                          <p className="font-medium text-gray-900">{p.name}</p>
-                          {p.category && <p className="text-xs text-gray-400">{p.category.name}</p>}
-                        </div>
-                      </td>
-                      <td className="table-td">
-                        {p.sku ? <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{p.sku}</span> : '—'}
-                      </td>
-                      <td className="table-td text-gray-600">{formatCurrency(p.costPrice)}</td>
-                      <td className="table-td font-medium text-gray-900">{formatCurrency(p.sellingPrice)}</td>
-                      <td className="table-td">
+            <CustomTable
+              isLoading={isLoading}
+              emptyMessage={<><Package className="w-8 h-8 mx-auto mb-2 opacity-40" />No products found</>}
+              columns={[
+                {
+                  key: 'name',
+                  label: 'Product',
+                  render: (_, p) => {
+                    const lowStock = Number(p.quantityOnHand) <= Number(p.reorderLevel);
+                    return (
+                      <div className={cn(lowStock && 'text-red-900')}>
+                        <p className="font-medium text-gray-900">{p.name}</p>
+                        {p.category && <p className="text-xs text-gray-400">{p.category.name}</p>}
+                      </div>
+                    );
+                  },
+                },
+                {
+                  key: 'sku',
+                  label: 'SKU',
+                  render: (v) => v
+                    ? <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{v}</span>
+                    : '—',
+                },
+                { key: 'costPrice', label: 'Cost', render: (v) => <span className="text-gray-600">{formatCurrency(v)}</span> },
+                { key: 'sellingPrice', label: 'Sell Price', render: (v) => <span className="font-medium text-gray-900">{formatCurrency(v)}</span> },
+                {
+                  key: 'quantityOnHand',
+                  label: 'Stock',
+                  render: (v, p) => {
+                    const lowStock = Number(v) <= Number(p.reorderLevel);
+                    return (
+                      <div>
                         <div className="flex items-center gap-1.5">
                           {lowStock && <AlertTriangle className="w-3.5 h-3.5 text-red-500" />}
                           <span className={cn('font-semibold', lowStock ? 'text-red-600' : 'text-gray-900')}>
-                            {Number(p.quantityOnHand).toFixed(0)} {p.unit}
+                            {Number(v).toFixed(0)} {p.unit}
                           </span>
                         </div>
                         {lowStock && <p className="text-xs text-red-400">Reorder at {p.reorderLevel}</p>}
-                      </td>
-                      <td className="table-td">
-                        <span className={cn('badge', p.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
-                          {p.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="table-td">
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => openAdjust(p)} title="Adjust stock" className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors">
-                            <Sliders className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors">
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+                    );
+                  },
+                },
+                {
+                  key: 'isActive',
+                  label: 'Status',
+                  render: (v) => (
+                    <span className={cn('badge', v ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
+                      {v ? 'Active' : 'Inactive'}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'id',
+                  label: 'Actions',
+                  render: (_, p) => (
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openAdjust(p)} title="Adjust stock" className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors">
+                        <Sliders className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors">
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ),
+                },
+              ]}
+              data={products}
+            />
           </div>
         </div>
       )}
@@ -171,46 +179,39 @@ export default function InventoryPage() {
       {tab === 'movements' && (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="table-th">Product</th>
-                  <th className="table-th">Type</th>
-                  <th className="table-th">Qty</th>
-                  <th className="table-th">Before</th>
-                  <th className="table-th">After</th>
-                  <th className="table-th">Reference</th>
-                  <th className="table-th">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {movements.length === 0 ? (
-                  <tr><td colSpan={7} className="table-td text-center text-gray-400 py-12">No movements recorded</td></tr>
-                ) : movements.map((m: any) => (
-                  <tr key={m.id} className="hover:bg-gray-50">
-                    <td className="table-td font-medium text-gray-900">{m.product?.name}</td>
-                    <td className="table-td">
-                      <span className={cn('badge flex items-center gap-1 w-fit',
-                        m.type === 'in' ? 'bg-green-100 text-green-700' :
-                        m.type === 'out' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-                      )}>
-                        {m.type === 'in' ? <ArrowUpCircle className="w-3 h-3" /> : m.type === 'out' ? <ArrowDownCircle className="w-3 h-3" /> : null}
-                        {m.type}
-                      </span>
-                    </td>
-                    <td className="table-td font-semibold text-gray-900">{Number(m.quantity).toFixed(2)}</td>
-                    <td className="table-td text-gray-500">{Number(m.balanceBefore || 0).toFixed(2)}</td>
-                    <td className="table-td text-gray-900">{Number(m.balanceAfter || 0).toFixed(2)}</td>
-                    <td className="table-td">
-                      {m.reference ? <span className="font-mono text-xs text-blue-600">{m.reference}</span> : '—'}
-                    </td>
-                    <td className="table-td text-gray-500 text-xs">
-                      {new Date(m.createdAt).toLocaleDateString('en-ZM')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <CustomTable
+              emptyMessage="No movements recorded"
+              columns={[
+                { key: 'product', label: 'Product', render: (v) => <span className="font-medium text-gray-900">{v?.name}</span> },
+                {
+                  key: 'type',
+                  label: 'Type',
+                  render: (v) => (
+                    <span className={cn('badge flex items-center gap-1 w-fit',
+                      v === 'in' ? 'bg-green-100 text-green-700' :
+                      v === 'out' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                    )}>
+                      {v === 'in' ? <ArrowUpCircle className="w-3 h-3" /> : v === 'out' ? <ArrowDownCircle className="w-3 h-3" /> : null}
+                      {v}
+                    </span>
+                  ),
+                },
+                { key: 'quantity', label: 'Qty', render: (v) => <span className="font-semibold text-gray-900">{Number(v).toFixed(2)}</span> },
+                { key: 'balanceBefore', label: 'Before', render: (v) => <span className="text-gray-500">{Number(v || 0).toFixed(2)}</span> },
+                { key: 'balanceAfter', label: 'After', render: (v) => <span className="text-gray-900">{Number(v || 0).toFixed(2)}</span> },
+                {
+                  key: 'reference',
+                  label: 'Reference',
+                  render: (v) => v ? <span className="font-mono text-xs text-blue-600">{v}</span> : '—',
+                },
+                {
+                  key: 'createdAt',
+                  label: 'Date',
+                  render: (v) => <span className="text-gray-500 text-xs">{new Date(v).toLocaleDateString('en-ZM')}</span>,
+                },
+              ]}
+              data={movements}
+            />
           </div>
         </div>
       )}
@@ -219,66 +220,51 @@ export default function InventoryPage() {
       {tab === 'categories' && (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="table-th">Category</th>
-                  <th className="table-th">Description</th>
-                  <th className="table-th">Created</th>
-                  <th className="table-th w-24">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {categories.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="table-td text-center text-gray-400 py-12">
-                      <Tags className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                      No categories found
-                    </td>
-                  </tr>
-                ) : categories.map((category: any) => (
-                  <tr key={category.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="table-td">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                          <Tags className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{category.name}</p>
-                          <p className="text-xs text-gray-400">Inventory category</p>
-                        </div>
+            <CustomTable
+              emptyMessage={<><Tags className="w-8 h-8 mx-auto mb-2 opacity-40" />No categories found</>}
+              columns={[
+                {
+                  key: 'name',
+                  label: 'Category',
+                  render: (v) => (
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                        <Tags className="w-4 h-4" />
                       </div>
-                    </td>
-                    <td className="table-td text-gray-600">
-                      {category.description || 'No description'}
-                    </td>
-                    <td className="table-td text-gray-500 text-sm">
-                      {category.createdAt
-                        ? new Date(category.createdAt).toLocaleDateString('en-ZM')
-                        : '—'}
-                    </td>
-                    <td className="table-td">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => openCategoryEdit(category)}
-                          className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors"
-                          title="Edit category"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => deleteCategory(category)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Delete category"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      <div>
+                        <p className="font-medium text-gray-900">{v}</p>
+                        <p className="text-xs text-gray-400">Inventory category</p>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  ),
+                },
+                { key: 'description', label: 'Description', render: (v) => <span className="text-gray-600">{v || 'No description'}</span> },
+                {
+                  key: 'createdAt',
+                  label: 'Created',
+                  render: (v) => (
+                    <span className="text-gray-500 text-sm">
+                      {v ? new Date(v).toLocaleDateString('en-ZM') : '—'}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'id',
+                  label: 'Actions',
+                  render: (_, category) => (
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openCategoryEdit(category)} className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors" title="Edit category">
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => deleteCategory(category)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete category">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ),
+                },
+              ]}
+              data={categories}
+            />
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomTable } from '@/components/CustomTable';
 import { useReportsPage } from '@/hooks/useReportsPage';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import {
@@ -183,43 +184,39 @@ export default function ReportsPage() {
               </div>
 
               <div className="card overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="table-th">Invoice</th>
-                      <th className="table-th">Customer</th>
-                      <th className="table-th">Due Date</th>
-                      <th className="table-th">Age (days)</th>
-                      <th className="table-th">Bucket</th>
-                      <th className="table-th text-right">Outstanding</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {aging.items.length === 0 ? (
-                      <tr><td colSpan={6} className="table-td text-center text-gray-400 py-8">No outstanding invoices</td></tr>
-                    ) : aging.items.map((item: any) => (
-                      <tr key={item.id} className={cn('hover:bg-gray-50', item.bucket === '90+' ? 'bg-red-50/30' : '')}>
-                        <td className="table-td font-mono text-sm text-brand-600">{item.invoiceNumber}</td>
-                        <td className="table-td font-medium text-gray-900">{item.customerName}</td>
-                        <td className="table-td text-gray-600 text-sm">{item.dueDate ? formatDate(item.dueDate) : '—'}</td>
-                        <td className="table-td">
-                          <span className={cn('font-semibold', item.ageDays > 90 ? 'text-red-600' : item.ageDays > 60 ? 'text-orange-500' : 'text-gray-700')}>
-                            {item.ageDays}
-                          </span>
-                        </td>
-                        <td className="table-td">
-                          <span className={cn('badge',
-                            item.bucket === '90+' ? 'bg-red-100 text-red-700' :
-                            item.bucket === '61-90' ? 'bg-orange-100 text-orange-700' :
-                            item.bucket === '31-60' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-600'
-                          )}>{item.bucket}</span>
-                        </td>
-                        <td className="table-td text-right font-semibold text-gray-900">{formatCurrency(item.outstanding)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <CustomTable
+                  emptyMessage="No outstanding invoices"
+                  columns={[
+                    { key: 'invoiceNumber', label: 'Invoice', render: (v) => <span className="font-mono text-sm text-brand-600">{v}</span> },
+                    { key: 'customerName', label: 'Customer', render: (v) => <span className="font-medium text-gray-900">{v}</span> },
+                    { key: 'dueDate', label: 'Due Date', render: (v) => <span className="text-gray-600 text-sm">{v ? formatDate(v) : '—'}</span> },
+                    {
+                      key: 'ageDays',
+                      label: 'Age (days)',
+                      render: (v) => (
+                        <span className={cn('font-semibold', v > 90 ? 'text-red-600' : v > 60 ? 'text-orange-500' : 'text-gray-700')}>{v}</span>
+                      ),
+                    },
+                    {
+                      key: 'bucket',
+                      label: 'Bucket',
+                      render: (v) => (
+                        <span className={cn('badge',
+                          v === '90+' ? 'bg-red-100 text-red-700' :
+                          v === '61-90' ? 'bg-orange-100 text-orange-700' :
+                          v === '31-60' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-600'
+                        )}>{v}</span>
+                      ),
+                    },
+                    {
+                      key: 'outstanding',
+                      label: 'Outstanding',
+                      render: (v) => <span className="text-right block font-semibold text-gray-900">{formatCurrency(v)}</span>,
+                    },
+                  ]}
+                  data={aging.items}
+                />
               </div>
             </>
           ) : null}

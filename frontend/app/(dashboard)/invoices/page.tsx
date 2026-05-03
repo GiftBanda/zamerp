@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomTable } from '@/components/CustomTable';
 import { useInvoicesPage } from '@/hooks/useInvoicesPage';
 import { formatCurrency, formatDate, STATUS_COLORS, cn } from '@/lib/utils';
 import {
@@ -73,113 +74,91 @@ export default function InvoicesPage() {
       {/* Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="table-th">Invoice #</th>
-                <th className="table-th">Customer</th>
-                <th className="table-th">Date</th>
-                <th className="table-th">Due</th>
-                <th className="table-th">Amount</th>
-                <th className="table-th">Status</th>
-                <th className="table-th w-36">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {isLoading ? (
-                [...Array(6)].map((_, i) => (
-                  <tr key={i}>
-                    {[...Array(7)].map((_, j) => (
-                      <td key={j} className="table-td">
-                        <div className="h-4 bg-gray-100 rounded animate-pulse" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : invoices.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="table-td text-center text-gray-400 py-16">
-                    <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    No invoices found
-                    <div className="mt-2">
-                      <Link href="/invoices/new" className="text-brand-600 text-sm hover:underline">
-                        Create your first invoice →
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                invoices.map((inv: any) => (
-                  <tr key={inv.id} className="hover:bg-gray-50 transition-colors group">
-                    <td className="table-td">
-                      <Link href={`/invoices/${inv.id}`} className="font-mono text-sm font-semibold text-brand-600 hover:underline">
-                        {inv.invoiceNumber}
-                      </Link>
-                      {inv.zraInvoiceNumber && (
-                        <p className="text-xs text-gray-400 font-mono">{inv.zraInvoiceNumber}</p>
-                      )}
-                    </td>
-                    <td className="table-td">
-                      <p className="font-medium text-gray-900">{inv.customer?.name}</p>
-                      {inv.customer?.tpin && (
-                        <p className="text-xs text-gray-400 font-mono">TPIN: {inv.customer.tpin}</p>
-                      )}
-                    </td>
-                    <td className="table-td text-gray-600 text-sm">{formatDate(inv.issueDate)}</td>
-                    <td className="table-td">
-                      {inv.dueDate ? (
-                        <span className={cn('text-sm', new Date(inv.dueDate) < new Date() && inv.status !== 'paid' ? 'text-red-600 font-medium' : 'text-gray-600')}>
-                          {formatDate(inv.dueDate)}
-                        </span>
-                      ) : <span className="text-gray-400">—</span>}
-                    </td>
-                    <td className="table-td">
-                      <p className="font-semibold text-gray-900">{formatCurrency(inv.total)}</p>
-                      {Number(inv.vatAmount) > 0 && (
-                        <p className="text-xs text-gray-400">VAT: {formatCurrency(inv.vatAmount)}</p>
-                      )}
-                    </td>
-                    <td className="table-td">
-                      <span className={cn('badge', STATUS_COLORS[inv.status] || 'bg-gray-100 text-gray-600')}>
-                        {inv.status}
-                      </span>
-                    </td>
-                    <td className="table-td">
-                      <div className="flex items-center gap-1">
-                        <Link href={`/invoices/${inv.id}`}
-                          className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors" title="View">
-                          <Eye className="w-3.5 h-3.5" />
-                        </Link>
-                        <button onClick={() => handleDownloadPdf(inv)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Download PDF">
-                          <Download className="w-3.5 h-3.5" />
-                        </button>
-                        {inv.status === 'draft' && (
-                          <button onClick={() => sendMutation.mutate(inv.id)}
-                            disabled={sendMutation.isPending}
-                            className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors" title="Mark as Sent">
-                            <Send className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {(inv.status === 'sent' || inv.status === 'overdue') && (
-                          <button onClick={() => openPayModal(inv)}
-                            className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors" title="Mark as Paid">
-                            <CheckCircle className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {inv.status !== 'void' && inv.status !== 'paid' && (
-                          <button onClick={() => { if (confirm('Void this invoice?')) voidMutation.mutate(inv.id); }}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Void">
-                            <Ban className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <CustomTable
+            isLoading={isLoading}
+            emptyMessage={
+              <><FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />No invoices found
+                <div className="mt-2"><Link href="/invoices/new" className="text-brand-600 text-sm hover:underline">Create your first invoice →</Link></div>
+              </>
+            }
+            columns={[
+              {
+                key: 'invoiceNumber',
+                label: 'Invoice #',
+                render: (v, inv) => (
+                  <div>
+                    <Link href={`/invoices/${inv.id}`} className="font-mono text-sm font-semibold text-brand-600 hover:underline">{v}</Link>
+                    {inv.zraInvoiceNumber && <p className="text-xs text-gray-400 font-mono">{inv.zraInvoiceNumber}</p>}
+                  </div>
+                ),
+              },
+              {
+                key: 'customer',
+                label: 'Customer',
+                render: (v) => (
+                  <div>
+                    <p className="font-medium text-gray-900">{v?.name}</p>
+                    {v?.tpin && <p className="text-xs text-gray-400 font-mono">TPIN: {v.tpin}</p>}
+                  </div>
+                ),
+              },
+              { key: 'issueDate', label: 'Date', render: (v) => <span className="text-gray-600 text-sm">{formatDate(v)}</span> },
+              {
+                key: 'dueDate',
+                label: 'Due',
+                render: (v, inv) => v
+                  ? <span className={cn('text-sm', new Date(v) < new Date() && inv.status !== 'paid' ? 'text-red-600 font-medium' : 'text-gray-600')}>{formatDate(v)}</span>
+                  : <span className="text-gray-400">—</span>,
+              },
+              {
+                key: 'total',
+                label: 'Amount',
+                render: (v, inv) => (
+                  <div>
+                    <p className="font-semibold text-gray-900">{formatCurrency(v)}</p>
+                    {Number(inv.vatAmount) > 0 && <p className="text-xs text-gray-400">VAT: {formatCurrency(inv.vatAmount)}</p>}
+                  </div>
+                ),
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (v) => <span className={cn('badge', STATUS_COLORS[v] || 'bg-gray-100 text-gray-600')}>{v}</span>,
+              },
+              {
+                key: 'id',
+                label: 'Actions',
+                render: (_, inv) => (
+                  <div className="flex items-center gap-1">
+                    <Link href={`/invoices/${inv.id}`} className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors" title="View">
+                      <Eye className="w-3.5 h-3.5" />
+                    </Link>
+                    <button onClick={() => handleDownloadPdf(inv)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Download PDF">
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                    {inv.status === 'draft' && (
+                      <button onClick={() => sendMutation.mutate(inv.id)} disabled={sendMutation.isPending}
+                        className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors" title="Mark as Sent">
+                        <Send className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {(inv.status === 'sent' || inv.status === 'overdue') && (
+                      <button onClick={() => openPayModal(inv)} className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors" title="Mark as Paid">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {inv.status !== 'void' && inv.status !== 'paid' && (
+                      <button onClick={() => { if (confirm('Void this invoice?')) voidMutation.mutate(inv.id); }}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Void">
+                        <Ban className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ),
+              },
+            ]}
+            data={invoices}
+          />
         </div>
       </div>
 
